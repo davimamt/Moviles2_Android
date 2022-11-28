@@ -11,10 +11,14 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,6 +47,38 @@ public class MainActivity extends AppCompatActivity {
 
 
         //Eventos
+        btnsearch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Bucar por Id Seller y recuperar todos los datos
+                db.collection("seller")
+                        .whereEqualTo("idseller", idseller.getText().toString())
+                        .get()
+                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                            @Override
+                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                if (task.isSuccessful()){
+                                    if(!task.getResult().isEmpty()){
+                                        // la instantanea tiene informacion del documento
+                                        for (QueryDocumentSnapshot document: task.getResult()){
+                                            //Mostrar la informacion en cada uno de los objetos referenciados
+                                            fullname.setText(document.getString("fullname"));
+                                            email.setText(document.getString("email"));
+                                            totalcomision.setText(String.valueOf(document.getDouble("totalcomision"))) ;
+                                        }
+                                    }
+                                    else{
+                                        //Si no encuentra el Id Seller del vendedor
+                                        Toast.makeText(getApplicationContext(), "Id Vendedor no Existe", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            }
+                        });
+
+            }
+        });
+
+
         btnsave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -61,22 +97,43 @@ public class MainActivity extends AppCompatActivity {
                     mseller.put("password", mpassword);
                     mseller.put("totalcomision", 0);
 
-                    //agregar el documento a la coleccion (tabla) seller a traves de la tabla temporal mseller
+
                     db.collection("seller")
-                            .add(mseller)
-                            .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                            .whereEqualTo("idseller", idseller.getText().toString())
+                            .get()
+                            .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
                                 @Override
-                                public void onSuccess(DocumentReference documentReference) {
-                                    Toast.makeText(getApplicationContext(), "Datos Ingresados correctamente", Toast.LENGTH_SHORT).show();
-                                }
-                            })
-                            .addOnFailureListener(new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    Toast.makeText(getApplicationContext(), "Error al guardar los datos...", Toast.LENGTH_SHORT).show();
+                                public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                    if (task.isSuccessful()){
+                                        if(!task.getResult().isEmpty()){
+                                            // la instantanea tiene informacion del documento
+                                            Toast.makeText(getApplicationContext(), "Ese vendedor ya existe en la Base de datos", Toast.LENGTH_SHORT).show();
+                                        }
+                                        else{
+                                            //Si no encuentra el Id Seller del vendedor
+                                            //agregar el documento a la coleccion (tabla) seller a traves de la tabla temporal mseller
+                                            db.collection("seller")
+                                                    .add(mseller)
+                                                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                                                        @Override
+                                                        public void onSuccess(DocumentReference documentReference) {
+                                                            Toast.makeText(getApplicationContext(), "Datos Ingresados correctamente", Toast.LENGTH_SHORT).show();
+                                                            idseller.setText("");
+                                                            fullname.setText("");
+                                                            email.setText("");
+                                                            password.setText("");
+                                                        }
+                                                    })
+                                                    .addOnFailureListener(new OnFailureListener() {
+                                                        @Override
+                                                        public void onFailure(@NonNull Exception e) {
+                                                            Toast.makeText(getApplicationContext(), "Error al guardar los datos...", Toast.LENGTH_SHORT).show();
+                                                        }
+                                                    });
+                                        }
+                                    }
                                 }
                             });
-
 
                 }
                 else{
