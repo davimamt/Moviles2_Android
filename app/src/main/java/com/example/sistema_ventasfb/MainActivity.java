@@ -3,6 +3,7 @@ package com.example.sistema_ventasfb;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -26,6 +27,7 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
     // Se genera un objeto para conectarse a la BD de Firebase- Firestore
     FirebaseFirestore db = FirebaseFirestore.getInstance();
+    String idAutomatic;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +49,60 @@ public class MainActivity extends AppCompatActivity {
 
 
         //Eventos
+        btnedit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Map<String, Object> mseller = new HashMap<>();
+                mseller.put("idseller", idseller.getText().toString());
+                mseller.put("fullname", fullname.getText().toString());
+                mseller.put("email",email.getText().toString());
+                mseller.put("password", password.getText().toString());
+                mseller.put("totalcomision", 0);
+
+
+                db.collection("seller")
+                        .whereEqualTo("idseller", idseller.getText().toString())
+                        .get()
+                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                            @Override
+                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                if (task.isSuccessful()){
+                                    if(!task.getResult().isEmpty()){
+                                        // la instantanea tiene informacion del documento
+                                        Toast.makeText(getApplicationContext(), "Ese vendedor ya existe en la Base de datos", Toast.LENGTH_SHORT).show();
+                                    }
+                                    else{
+                                        //Si no encuentra el Id Seller del vendedor
+                                        //agregar el documento a la coleccion (tabla) seller a traves de la tabla temporal mseller
+                                        db.collection("seller").document(idAutomatic)
+                                                .set(mseller)
+                                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                    @Override
+                                                    public void onSuccess(Void unset) {
+                                                        Toast.makeText(getApplicationContext(), "Datos Actualizados correctamente", Toast.LENGTH_SHORT).show();
+
+                                                    }
+                                                })
+                                                .addOnFailureListener(new OnFailureListener() {
+                                                    @Override
+                                                    public void onFailure(@NonNull Exception e) {
+                                                        Toast.makeText(getApplicationContext(), "Error al guardar los datos...", Toast.LENGTH_SHORT).show();
+                                                    }
+                                                });
+                                    }
+                                }
+                            }
+                        });
+
+            }
+        });
+
+
+
+
+
+
+
         btnsearch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -61,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
                                     if(!task.getResult().isEmpty()){
                                         // la instantanea tiene informacion del documento
                                         for (QueryDocumentSnapshot document: task.getResult()){
+                                            idAutomatic= document.getId();
                                             //Mostrar la informacion en cada uno de los objetos referenciados
                                             fullname.setText(document.getString("fullname"));
                                             email.setText(document.getString("email"));
