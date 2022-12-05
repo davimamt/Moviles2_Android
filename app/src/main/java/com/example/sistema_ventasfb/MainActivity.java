@@ -3,6 +3,7 @@ package com.example.sistema_ventasfb;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
@@ -28,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
     // Se genera un objeto para conectarse a la BD de Firebase- Firestore
     FirebaseFirestore db = FirebaseFirestore.getInstance();
     String idAutomatic;
+    String mTotalcomsio;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +51,63 @@ public class MainActivity extends AppCompatActivity {
 
 
         //Eventos
+
+        btnsales.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                db.collection("seller")
+                        .whereEqualTo("idseller", idseller.getText().toString())
+                        .get()
+                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                            @Override
+                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                                if(task.isSuccessful()){
+                                    if(!task.getResult().isEmpty()){
+                                        for (QueryDocumentSnapshot document: task.getResult()){
+                                            mTotalcomsio = String.valueOf(document.getDouble("totalcomision"));
+
+                                        }
+
+                                        //ir a ventas con el parametro de idseller
+                                        Intent iSales = new Intent(getApplicationContext(), sales.class);
+                                        //pasar el parametro de la identificación del vendedor
+                                        iSales.putExtra("eidseller", idseller.getText().toString());
+                                        iSales.putExtra("etotalcomision", mTotalcomsio);
+                                        startActivity(iSales);
+                                    }
+                                    else {
+                                        Toast.makeText(getApplicationContext(), "Id vendedor no existe!", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            }
+                        });
+            }
+        });
+
+
+
+
+
+        btndelete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(totalcomision.getText().toString().equals("0.0")){
+                    db.collection("seller").document(idAutomatic)
+                            .delete()
+                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void unused) {
+                                    Toast.makeText(MainActivity.this, "Vendedor eliminado", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                }
+                else{
+                    Toast.makeText(MainActivity.this, "Vendedor con registro de ventas!", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+
         btnedit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -69,11 +128,6 @@ public class MainActivity extends AppCompatActivity {
                                 if (task.isSuccessful()){
                                     if(!task.getResult().isEmpty()){
                                         // la instantanea tiene informacion del documento
-                                        Toast.makeText(getApplicationContext(), "Ese vendedor ya existe en la Base de datos", Toast.LENGTH_SHORT).show();
-                                    }
-                                    else{
-                                        //Si no encuentra el Id Seller del vendedor
-                                        //agregar el documento a la coleccion (tabla) seller a traves de la tabla temporal mseller
                                         db.collection("seller").document(idAutomatic)
                                                 .set(mseller)
                                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -89,6 +143,11 @@ public class MainActivity extends AppCompatActivity {
                                                         Toast.makeText(getApplicationContext(), "Error al guardar los datos...", Toast.LENGTH_SHORT).show();
                                                     }
                                                 });
+                                        Toast.makeText(getApplicationContext(), "Vendedor actualizado correctamente", Toast.LENGTH_SHORT).show();
+                                    }
+                                    else{
+                                        Toast.makeText(getApplicationContext(), "Este vendedor no existe", Toast.LENGTH_SHORT).show();
+
                                     }
                                 }
                             }
