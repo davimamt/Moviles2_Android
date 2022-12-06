@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
                                         //pasar el parametro de la identificación del vendedor
                                         iSales.putExtra("eidseller", idseller.getText().toString());
                                         iSales.putExtra("etotalcomision", mTotalcomsio);
+                                        iSales.putExtra("eidautomatic", idAutomatic);
                                         startActivity(iSales);
                                     }
                                     else {
